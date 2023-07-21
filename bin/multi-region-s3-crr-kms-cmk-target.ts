@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { MultiRegionS3CrrKmsCmkTargetStack } from '../lib/multi-region-s3-crr-kms-cmk-target-stack';
+import { MultiRegionS3CrrKmsCmkTarget } from '../lib/index';
 
+// Create an instance of the CDK app.
 const app = new cdk.App();
-new MultiRegionS3CrrKmsCmkTargetStack(app, 'MultiRegionS3CrrKmsCmkTargetStack', {
+
+// Create a new CDK stack for the application.
+const stack = new cdk.Stack(app, 'CasStackTest');
+
+// Instantiate the MultiRegionS3CrrKmsCmkTarget construct and add it to the stack.
+new MultiRegionS3CrrKmsCmkTarget(stack, 'MultiRegionS3CrrKmsCmkTarget', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
