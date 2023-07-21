@@ -14,10 +14,9 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk synth`       emits the synthesized CloudFormation template
 
 ![alt text](swclogo.jpg)
-# swc_scripts
-This repository contains various scripts. For additional details, please email at [christopher.sargent@sargentwalker.io](mailto:christopher.sargent@sargentwalker.io).
-
 # CDK CasStackTest
+This repository contains aws cdk to deploy s3 bucket, kms key and add ssm parameter. For additional details, please email at [christopher.sargent@sargentwalker.io](mailto:christopher.sargent@sargentwalker.io).
+
 1. ssh cas@172.18.0.193
 2. sudo -i
 3. mkdir /home/cas/multi-region-s3-crr-kms-cmk-target && cd /home/cas/multi-region-s3-crr-kms-cmk-target
