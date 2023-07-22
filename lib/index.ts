@@ -24,7 +24,7 @@ export class MultiRegionS3CrrKmsCmkTarget extends Construct {
     generated.keySpec = kms.KeySpec.SYMMETRIC_DEFAULT;
     generated.keyUsage = kms.KeyUsage.ENCRYPT_DECRYPT;
     generated.pendingWindow = Duration.days(30);
-
+    
     const targetKmsKey = new kms.Key(this, 'MyTargetKey', generated);
 
     // Create the S3 Bucket with generated properties
@@ -32,8 +32,13 @@ export class MultiRegionS3CrrKmsCmkTarget extends Construct {
       bucketName: cdk.PhysicalName.GENERATE_IF_NEEDED,
       encryption: s3.BucketEncryption.KMS,
       encryptionKey: targetKmsKey,
+      enforceSSL: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       versioned: true,
     });
+
+    // S3 Bucket must disable ACLs and bucket access should only be granted through access policies
+    generated.objectOwnership = s3.ObjectOwnership.BUCKET_OWNER_ENFORCED;
 
     // Create an SSM Parameter to store the KMS Key ARN
     const stack = cdk.Stack.of(this);

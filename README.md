@@ -1,18 +1,3 @@
-# Welcome to your CDK TypeScript project
-
-This is a blank project for CDK development with TypeScript.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
-
 ![alt text](swclogo.jpg)
 # CDK CasStackTest
 This repository contains aws cdk to deploy s3 bucket, kms key and add ssm parameter. For additional details, please email at [christopher.sargent@sargentwalker.io](mailto:christopher.sargent@sargentwalker.io).
@@ -303,3 +288,71 @@ arn:aws:cloudformation:us-east-1:507370583167:stack/CasStackTest/bf3d8b60-27f0-1
 
 ✨  Total time: 166.25s
 ```
+11.
+
+# Compliance with regula
+1. cd /root && wget https://github.com/fugue/regula/releases/download/v3.2.1/regula_3.2.1_Linux_x86_64.tar.gz
+2. tar -zxvf regula_3.2.1_Linux_x86_64.tar.gz
+3. cd /home/cas/multi-region-s3-crr-kms-cmk-target
+4. cdk synth
+5. cdk synth | regula run
+```
+FG_R00229: S3 buckets should have all `block public access` options enabled [High]
+           https://docs.fugue.co/FG_R00229.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+FG_R00100: S3 bucket policies should only allow requests that use HTTPS [Medium]
+           https://docs.fugue.co/FG_R00100.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+Found 2 problems.
+```
+6. https://docs.fugue.co/FG_R00229.html > https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html > Add blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+
+7. vim lib/index.ts
+* add blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+```
+    // Create the S3 Bucket with generated properties
+    const targetBucket = new s3.Bucket(this, 'MyTargetBucket', {
+      bucketName: cdk.PhysicalName.GENERATE_IF_NEEDED,
+      encryption: s3.BucketEncryption.KMS,
+      encryptionKey: targetKmsKey,
+      enforceSSL: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      versioned: true,
+    });
+```
+8. cdk synth | regula run
+* Note first issue FG_R00229 has been resolved
+```
+FG_R00100: S3 bucket policies should only allow requests that use HTTPS [Medium]
+           https://docs.fugue.co/FG_R00100.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+Found one problem.
+```
+
+9. cdk bootstrap && cdk deploy 
+
+
+# References
+* [regula](https://github.com/fugue/regula).
+* [regula.dev](https://regula.dev/getting-started.html#tutorial-run-regula-locally-on-terraform-iac)
+* [secureCDK](https://www.fugue.co/blog/securing-an-aws-cdk-app-with-regula-and-openpolicyagent)
+
+# Notes
+The `cdk.json` file tells the CDK Toolkit how to execute your app.
+
+# Useful commands
+* `npm run build`   compile typescript to js
+* `npm run watch`   watch for changes and compile
+* `npm run test`    perform the jest unit tests
+* `cdk deploy`      deploy this stack to your default AWS account/region
+* `cdk diff`        compare deployed stack with current state
+* `cdk synth`       emits the synthesized CloudFormation template
