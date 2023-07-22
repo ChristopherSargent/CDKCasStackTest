@@ -1,23 +1,7 @@
-# Welcome to your CDK TypeScript project
-
-This is a blank project for CDK development with TypeScript.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
-
 ![alt text](swclogo.jpg)
-# swc_scripts
-This repository contains various scripts. For additional details, please email at [christopher.sargent@sargentwalker.io](mailto:christopher.sargent@sargentwalker.io).
-
 # CDK CasStackTest
+This repository contains aws cdk to deploy s3 bucket, kms key and add ssm parameter. For additional details, please email at [christopher.sargent@sargentwalker.io](mailto:christopher.sargent@sargentwalker.io).
+
 1. ssh cas@172.18.0.193
 2. sudo -i
 3. mkdir /home/cas/multi-region-s3-crr-kms-cmk-target && cd /home/cas/multi-region-s3-crr-kms-cmk-target
@@ -54,48 +38,59 @@ new MultiRegionS3CrrKmsCmkTarget(stack, 'MultiRegionS3CrrKmsCmkTarget', {
 ```
 6. vim lib/index.ts
 ```
-// The required AWS CDK modules and constructs are imported. These modules include kms, s3, and ssm, which provide functionality for AWS Key Management Service (KMS), Amazon S3, and AWS Systems Manager Parameter Store (SSM), respectively.
 import { Construct } from 'constructs';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import { Duration } from 'aws-cdk-lib';
 
-// This interface defines the properties that can be provided when creating an instance of the MultiRegionS3CrrKmsCmkTarget construct. Currently, there are no properties defined in this interface.
 export interface MultiRegionS3CrrKmsCmkTargetProps {
+  // You can add any custom properties that need to be passed to the construct here.
 }
-        // Define the properties of your construct, in this step, the MultiRegionS3CrrKmsCmkTarget class is defined, which extends the Construct class from the constructs module. The construct takes three parameters: scope, id, and props. The props parameter allows you to pass properties to this construct, but currently, it is not used.
+
 export class MultiRegionS3CrrKmsCmkTarget extends Construct {
   public readonly targetBucket: s3.Bucket;
   public readonly targetKeyIdSsmParameterName: string;
+
   constructor(scope: Construct, id: string, props: MultiRegionS3CrrKmsCmkTargetProps = {}) {
     super(scope, id);
 
-    // Define construct contents here. KMS Key and S3 Bucket, In this step, the targetKmsKey is created using the kms.Key construct, and the targetBucket is created using the s3.Bucket construct. The bucket is configured to use server-side encryption with KMS (encryption: s3.BucketEncryption.KMS), and the targetKmsKey is specified as the encryption key for the bucket (encryptionKey: targetKmsKey). The bucket is also configured to be versioned (versioned: true).
-    const targetKmsKey = new kms.Key(this, 'MyTargetKey');
+    // Define construct contents here using the "generated" syntax
+    const generated: { [key: string]: any } = {};
 
-    // s3 bucekt construct contents
+    // Create the KMS Key with generated properties
+    generated.enableKeyRotation = true;
+    generated.keySpec = kms.KeySpec.SYMMETRIC_DEFAULT;
+    generated.keyUsage = kms.KeyUsage.ENCRYPT_DECRYPT;
+    generated.pendingWindow = Duration.days(30);
+
+    const targetKmsKey = new kms.Key(this, 'MyTargetKey', generated);
+
+    // Create the S3 Bucket with generated properties
     const targetBucket = new s3.Bucket(this, 'MyTargetBucket', {
       bucketName: cdk.PhysicalName.GENERATE_IF_NEEDED,
       encryption: s3.BucketEncryption.KMS,
       encryptionKey: targetKmsKey,
-      versioned: true
+      versioned: true,
     });
 
-    // Creating an SSM Parameter, In this step, an SSM String Parameter is created using the ssm.StringParameter construct. The parameter's name is set based on the stack name (parameterName: ${stack.stackName}.MyTargetKeyId``), and the description is provided. The value of the parameter is set to the ARN of the targetKmsKey (KMS Key).
+    // Create an SSM Parameter to store the KMS Key ARN
     const stack = cdk.Stack.of(this);
     const parameterName = `${stack.stackName}.MyTargetKeyId`;
 
     new ssm.StringParameter(this, 'MyTargetKeyIdSSMParam', {
       parameterName: parameterName,
       description: 'The KMS Key Id for the target stack',
-      stringValue: targetKmsKey.keyArn
+      stringValue: targetKmsKey.keyArn,
     });
-    // Exporting the Construct's Properties, the properties of the construct (targetBucket and targetKeyIdSsmParameterName) are assigned values. These properties can be used later when using an instance of this construct.
+
+    // Assign properties to the class fields
     this.targetBucket = targetBucket;
     this.targetKeyIdSsmParameterName = parameterName;
   }
 }
+
 ```
 7. npm install && tsc
 8. cdk synth
@@ -293,3 +288,72 @@ arn:aws:cloudformation:us-east-1:507370583167:stack/CasStackTest/bf3d8b60-27f0-1
 
 ✨  Total time: 166.25s
 ```
+11.
+
+# Compliance with regula
+1. cd /root && wget https://github.com/fugue/regula/releases/download/v3.2.1/regula_3.2.1_Linux_x86_64.tar.gz
+2. tar -zxvf regula_3.2.1_Linux_x86_64.tar.gz
+3. cd /home/cas/multi-region-s3-crr-kms-cmk-target
+4. cdk synth
+5. cdk synth | regula run
+```
+FG_R00229: S3 buckets should have all `block public access` options enabled [High]
+           https://docs.fugue.co/FG_R00229.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+FG_R00100: S3 bucket policies should only allow requests that use HTTPS [Medium]
+           https://docs.fugue.co/FG_R00100.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+Found 2 problems.
+```
+6. https://docs.fugue.co/FG_R00229.html > https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3.Bucket.html > Add blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+
+7. vim lib/index.ts
+* add blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+```
+    // Create the S3 Bucket with generated properties
+    const targetBucket = new s3.Bucket(this, 'MyTargetBucket', {
+      bucketName: cdk.PhysicalName.GENERATE_IF_NEEDED,
+      encryption: s3.BucketEncryption.KMS,
+      encryptionKey: targetKmsKey,
+      enforceSSL: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      versioned: true,
+    });
+```
+8. cdk synth | regula run
+* Note first issue FG_R00229 has been resolved
+```
+FG_R00100: S3 bucket policies should only allow requests that use HTTPS [Medium]
+           https://docs.fugue.co/FG_R00100.html
+
+  [1]: MultiRegionS3CrrKmsCmkTargetMyTargetBucketCE7D775A
+       in <stdin>:28:3
+
+Found one problem.
+```
+
+9. cdk bootstrap && cdk deploy 
+
+
+# References
+* [regula](https://github.com/fugue/regula).
+* [regula.dev](https://regula.dev/getting-started.html#tutorial-run-regula-locally-on-terraform-iac)
+* [secureCDK](https://www.fugue.co/blog/securing-an-aws-cdk-app-with-regula-and-openpolicyagent)
+* [AWS-CDK-API-Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html)
+
+# Notes
+The `cdk.json` file tells the CDK Toolkit how to execute your app.
+
+# Useful commands
+* `npm run build`   compile typescript to js
+* `npm run watch`   watch for changes and compile
+* `npm run test`    perform the jest unit tests
+* `cdk deploy`      deploy this stack to your default AWS account/region
+* `cdk diff`        compare deployed stack with current state
+* `cdk synth`       emits the synthesized CloudFormation template
