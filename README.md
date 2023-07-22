@@ -345,6 +345,7 @@ Found one problem.
 * [regula](https://github.com/fugue/regula).
 * [regula.dev](https://regula.dev/getting-started.html#tutorial-run-regula-locally-on-terraform-iac)
 * [secureCDK](https://www.fugue.co/blog/securing-an-aws-cdk-app-with-regula-and-openpolicyagent)
+* [AWS-CDK-API-Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html)
 
 # Notes
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
